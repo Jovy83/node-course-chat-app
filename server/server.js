@@ -21,12 +21,22 @@ io.on('connection', (socket) => {
     // this socket arg is similar to the socket we have access to in our index.html file. this represent the individual socket as opposed to all of the users connected to the server
     console.log('New user connected');
 
-    socket.on('disconnect', () => {
-        console.log('User was disconnected');
+
+    // socket.emit from Admin text Welcome to the chat app
+    socket.emit('newMessage', {
+        from: 'Admin',
+        text: 'Welcome to the chat app',
+        createdAt: new Date().getTime()
+    });
+    // socket.broadcast.emit from Admin text New user joined
+    socket.broadcast.emit('newMessage', {
+        from: 'Admin',
+        text: 'New user joined',
+        createdAt: new Date().getTime()
     });
 
     // createMessage listener
-    socket.on('createMessage', function(message) {
+    socket.on('createMessage', function (message) {
         console.log('createMessage', message);
 
         // newMessage emitter
@@ -35,7 +45,19 @@ io.on('connection', (socket) => {
             text: message.text,
             createdAt: new Date().getTime() // we generate createdAt on the server so that the client can't spoof this data
         });
+
+        // broadcast to everyone except this socket (ourselves)
+        // socket.broadcast.emit('newMessage', {
+        //     from: message.from,
+        //     text: message.text,
+        //     createdAt: new Date().getTime()
+        // });
     });
+
+    socket.on('disconnect', () => {
+        console.log('User was disconnected');
+    });
+
 });
 
 server.listen(port, () => {
