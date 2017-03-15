@@ -3,6 +3,8 @@ const express = require('express');
 const socketIO = require('socket.io');
 const http = require('http');
 
+const {generateMessage} = require('./utils/message');
+
 const port = process.env.PORT || 3000;
 const publicPath = path.join(__dirname, '/../public'); // much cleaner way using the built-in path module so use this instead
 
@@ -23,28 +25,18 @@ io.on('connection', (socket) => {
 
 
     // socket.emit from Admin text Welcome to the chat app
-    socket.emit('newMessage', {
-        from: 'Admin',
-        text: 'Welcome to the chat app',
-        createdAt: new Date().getTime()
-    });
+    socket.emit('newMessage', generateMessage('Admin', 'Welcome to the chat app'));
     // socket.broadcast.emit from Admin text New user joined
-    socket.broadcast.emit('newMessage', {
-        from: 'Admin',
-        text: 'New user joined',
-        createdAt: new Date().getTime()
-    });
+    socket.broadcast.emit('newMessage', generateMessage('Admin', 'New user joined'));
 
     // createMessage listener
     socket.on('createMessage', function (message) {
         console.log('createMessage', message);
 
         // newMessage emitter
-        io.emit('newMessage', {
-            from: message.from,
-            text: message.text,
-            createdAt: new Date().getTime() // we generate createdAt on the server so that the client can't spoof this data
-        });
+        io.emit('newMessage', generateMessage(message.from, message.text));
+
+        // we generate createdAt on the server side so that the client can't spoof this data
 
         // broadcast to everyone except this socket (ourselves)
         // socket.broadcast.emit('newMessage', {
