@@ -25,17 +25,17 @@ io.on('connection', (socket) => {
         console.log('User was disconnected');
     });
 
-    // newMessage emitter
-    socket.emit('newMessage', {
-        from: 'pota',
-        text: 'tangina',
-        createdAt: 123
-    });
-
     // createMessage listener
     socket.on('createMessage', function(message) {
         console.log('createMessage', message);
-    })
+
+        // newMessage emitter
+        io.emit('newMessage', {
+            from: message.from,
+            text: message.text,
+            createdAt: new Date().getTime() // we generate createdAt on the server so that the client can't spoof this data
+        });
+    });
 });
 
 server.listen(port, () => {
