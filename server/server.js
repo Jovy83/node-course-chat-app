@@ -30,11 +30,13 @@ io.on('connection', (socket) => {
     socket.broadcast.emit('newMessage', generateMessage('Admin', 'New user joined'));
 
     // createMessage listener
-    socket.on('createMessage', function (message) {
+    socket.on('createMessage', function (message, callback) {
         console.log('createMessage', message);
 
         // newMessage emitter
         io.emit('newMessage', generateMessage(message.from, message.text));
+
+        callback('This is from the server');
 
         // we generate createdAt on the server side so that the client can't spoof this data
 
