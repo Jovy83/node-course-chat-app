@@ -3,7 +3,7 @@ const express = require('express');
 const socketIO = require('socket.io');
 const http = require('http');
 
-const {generateMessage} = require('./utils/message');
+const {generateMessage, generateLocationMessage} = require('./utils/message');
 
 const port = process.env.PORT || 3000;
 const publicPath = path.join(__dirname, '/../public'); // much cleaner way using the built-in path module so use this instead
@@ -26,7 +26,7 @@ io.on('connection', (socket) => {
 
     // socket.emit from Admin text Welcome to the chat app
     socket.emit('newMessage', generateMessage('Admin', 'Welcome to the chat app'));
-    // socket.broadcast.emit from Admin text New user joined
+    // socket.broadcast.emit from Admin text New user joined (aka broadcast to everyone except this socket/ourselves)
     socket.broadcast.emit('newMessage', generateMessage('Admin', 'New user joined'));
 
     // createMessage listener
@@ -39,13 +39,12 @@ io.on('connection', (socket) => {
         callback('This is from the server');
 
         // we generate createdAt on the server side so that the client can't spoof this data
+    });
 
-        // broadcast to everyone except this socket (ourselves)
-        // socket.broadcast.emit('newMessage', {
-        //     from: message.from,
-        //     text: message.text,
-        //     createdAt: new Date().getTime()
-        // });
+    // listener for the user location
+    socket.on('createLocationMessage', (coords) => {
+        // notify all users by using io.emit
+        io.emit('newLocationMessage', generateLocationMessage('Admin', coords.latitude, coords.longitude));
     });
 
     socket.on('disconnect', () => {
