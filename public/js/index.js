@@ -34,12 +34,16 @@ socket.on('newLocationMessage', function (message) {
 jQuery('#message-form').on('submit', function (e) {
     e.preventDefault(); // prevents the default behavior for the event which reloads the entire page and appending the query to the address. 
 
+    var messageTextbox = jQuery('[name=message]');
+
     // emit createMessage here because the user pressed the send button. 
     socket.emit('createMessage', {
         from: 'User',
-        text: jQuery('[name=message]').val() // select the element with a name of 'message' which is our textfield
+        text: messageTextbox.val() // select the element with a name of 'message' which is our textfield
     }, function () {
         // acknowledgement to be filled later if needed. 
+        // clear the textbox once the message sent out successfully
+        messageTextbox.val(''); // supply no arg to get, supply arg to set. 
     });
 });
 
@@ -52,6 +56,8 @@ locationButton.on('click', function () { // attach a listener for the button. it
         return alert('Geolocation not supported by your browser'); // show an alert which is available on all browsers
     }
 
+    locationButton.attr('disabled', 'disabled').text('Sending location...'); // disable the button when user requests for user location
+
     // start the process of getting the user's coordinates
     navigator.geolocation.getCurrentPosition(function (position) {
         // success case. emit an event here
@@ -59,9 +65,12 @@ locationButton.on('click', function () { // attach a listener for the button. it
             latitude: position.coords.latitude,
             longitude: position.coords.longitude
         });
+
+        locationButton.removeAttr('disabled').text('Send location'); // re-enable the button once we get a result for the location
     }, function () {
         // fail case
         alert('Unable to fetch location'); // this is usually called if the user denies permission
+        locationButton.removeAttr('disabled').text('Send location'); // re-enable the button once we get a result for the location
     });
 
     // getting location mostly work on all browsers. Some browsers or mobile require an https connection to be able to share location. take note of that. The only exception is if you run http that's on localhost. that's ok. 
