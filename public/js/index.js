@@ -13,18 +13,21 @@ socket.on('disconnect', function () {
 
 // newMessage listener
 socket.on('newMessage', function (message) {
+    const formattedTime = moment(message.createdAt).format('h:mm a');
     console.log('newMessage', message);
 
     var li = jQuery('<li></li>'); // create a new element (list item) using jQuery
-    li.text(`${message.from}: ${message.text}`); // edit its text property
+    li.text(`${message.from} <${formattedTime}>: ${message.text}`); // edit its text property
     jQuery('#messages').append(li); // append this new li to our ol in index.html
 });
 
 // newLocationMessage listener
 socket.on('newLocationMessage', function (message) {
+    const formattedTime = moment(message.createdAt).format('h:mm a');
+
     var li = jQuery('<li></li>'); // create a new list item
     var a = jQuery('<a target="_blank">My current location</a>'); // create an anchor. target = _blank means open in a new tab 
-    li.text(`${message.from}: `);
+    li.text(`${message.from} <${formattedTime}>: `);
     a.attr('href', message.url); // attr can get or set attributes of tags. To get, supply the attr name. To set, supply attr name and the new value
     li.append(a); // append the link to the <user>: string we currently have 
     jQuery('#messages').append(li); // append this new li to our ol in index.html
