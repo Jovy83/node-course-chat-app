@@ -3,7 +3,9 @@ const express = require('express');
 const socketIO = require('socket.io');
 const http = require('http');
 
-const {generateMessage, generateLocationMessage} = require('./utils/message');
+const { generateMessage, generateLocationMessage } = require('./utils/message');
+const { isRealString } = require('./utils/validation');
+const { Users } = require('./utils/users');
 
 const port = process.env.PORT || 3000;
 const publicPath = path.join(__dirname, '/../public'); // much cleaner way using the built-in path module so use this instead
@@ -12,22 +14,51 @@ var app = express();
 var server = http.createServer(app); // this is to add socketIO support. we've actually used this method already. when we call app.listen in express, it literally calls the createServer method behind the scenes. 
 var io = socketIO(server); // pass in the server we want to use with web sockets. this returns a web sockets server so that we can emit or listen to events. this is how we're going to communicate between server/client
 
+var users = new Users(); // this will hold our some sort of singleton for Users. 
 
 // console.log(__dirname + '/../public'); // old way we used to navigate to another folder. if we log this, you can see that the path is not clean as it goes to server, then back out, before finally getting to the public folder. this is unnecessary. 
 // console.log(publicPath); 
 
 app.use(express.static(publicPath));
 
-// this lets us register an event listener. we can listen for a specific event and do something when that event happens. one built in event that we're going to use is called `connection` which lets us listen for a new connection, meaning a client connected to the server and let's us do something when that connection comes in. 
+// this lets us register an event listener. we can listen for a specific event and do something when that event happens. one built in event that we're going to use is called `connection` which lets us listen for a new connection, meaning a client connected to the server and lets us do something when that connection comes in. 
 io.on('connection', (socket) => {
-    // this socket arg is similar to the socket we have access to in our index.html file. this represent the individual socket as opposed to all of the users connected to the server
+    // this socket arg is similar to the socket we have access to in our chat.html file. this represent the individual socket as opposed to all of the users connected to the server
     console.log('New user connected');
 
+    // join listener
+    socket.on('join', (params, callback) => {
+        if (!isRealString(params.name) || !isRealString(params.room)) {
+            return callback('Name and room name are required'); // pass an error if validation failed
+        }
 
-    // socket.emit from Admin text Welcome to the chat app
-    socket.emit('newMessage', generateMessage('Admin', 'Welcome to the chat app'));
-    // socket.broadcast.emit from Admin text New user joined (aka broadcast to everyone except this socket/ourselves)
-    socket.broadcast.emit('newMessage', generateMessage('Admin', 'New user joined'));
+        // list of emits we've done in the server so far
+        // io.emit = emits to every single connected user
+        // socket.broadcast.emit = send the message to everyone except for the sender
+        // socket.emit = emits event specifically to one user
+
+        // these emits have a room counterpart which means you can choose to only emit to certain users in a certain room. 
+        // io.to('roomName').emit = emits to everyone in that room
+        // socket.broadcast.to('roomName').emit = emits to everyone in that room except the sender
+        // it's the same for socket.emit since we're sending a message to one specific user anyway
+
+        socket.join(params.room); // have the client join the room name they specified
+        // socket.leave('roomName') // this leaves the room 
+
+        // when the user joins, add them to our users array
+        // to make sure there's no duplicate user in our array, remove users each time they join, if they're in the array, before adding them to the array 
+        users.removeUser(socket.id);
+        users.addUser(socket.id, params.name, params.room);
+        // broadcast to everyone inside the room that this user has joined so that they can have their people list updated
+        io.to(params.room).emit('updateUserList', users.getUserList(params.room));
+
+        // socket.emit from Admin text Welcome to the chat app
+        socket.emit('newMessage', generateMessage('Admin', 'Welcome to the chat app'));
+        // socket.broadcast.emit from Admin text New user joined (aka broadcast to everyone in the room except this socket/ourselves)
+        socket.broadcast.to(params.room).emit('newMessage', generateMessage('Admin', `${params.name} has joined`));
+
+        callback(); // don't pass any errors if string validation passed
+    });
 
     // createMessage listener
     socket.on('createMessage', function (message, callback) {
@@ -49,6 +80,13 @@ io.on('connection', (socket) => {
 
     socket.on('disconnect', () => {
         console.log('User was disconnected');
+        // when the user disconnects, remove him from our users array
+        // then emit to everyone in the room that the said user has left the room/disconnected 
+        var user = users.removeUser(socket.id);
+        if (user) {
+            io.to(user.room).emit('updateUserList', users.getUserList(user.room)); // update the user list
+            io.to(user.room).emit('newMessage', generateMessage('Admin', `${user.name} has left.`)); // will print 'user' has left the room
+        }
     });
 
 });

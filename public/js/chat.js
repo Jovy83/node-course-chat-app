@@ -4,11 +4,34 @@ var socket = io();
 socket.on('connect', function () {
     // we don't need access to a socket arg since we already have it above 
     console.log('Connected to server');
+
+    const params = jQuery.deparam(window.location.search);
+    socket.emit('join', params, function (err) {
+        if (err) {
+            // will trigger if string validation failed
+            alert(err); // display an alertbox
+            window.location.href = '/'; // send them back to the root page 
+        } else {
+            console.log('No errors');
+        }
+    });
 });
 
 // below will fire if whenever the connection drops
 socket.on('disconnect', function () {
     console.log('Disconnected from server');
+});
+
+// updateUserList listener
+socket.on('updateUserList', function(users) {
+    // console.log('Users list', users);
+
+    var ol = jQuery('<ol></ol>'); // create an ordered list
+    users.forEach(function(user) { // iterate through our users array
+        ol.append(jQuery('<li></li>').text(user)); // create a list item for each element and set the text of the list item to the user (which is the user.name property)
+    });
+
+    jQuery('#users').html(ol); // render by adding it to the DOM. Select the element called users then set its html property equal to our ordered list above. 
 });
 
 // newMessage listener
@@ -24,6 +47,8 @@ socket.on('newMessage', function (message) {
         createdAt: formattedTime
     });
     jQuery('#messages').append(html);
+
+    scrollToBottom();
 
     // rendering method using pure jquery
     // var li = jQuery('<li></li>'); // create a new element (list item) using jQuery
@@ -43,6 +68,8 @@ socket.on('newLocationMessage', function (message) {
         createdAt: formattedTime
     });
     jQuery('#messages').append(html);
+
+    scrollToBottom();
 
     // rendering method using pure jQuery
     // var li = jQuery('<li></li>'); // create a new list item
@@ -98,3 +125,24 @@ locationButton.on('click', function () { // attach a listener for the button. it
 
     // getting location mostly work on all browsers. Some browsers or mobile require an https connection to be able to share location. take note of that. The only exception is if you run http that's on localhost. that's ok. 
 });
+
+function scrollToBottom() {
+    // we're going to scrollToBottom everytime we add a new message to the chat area
+    // Selectors
+    var messages = jQuery('#messages');
+    var newMessage = messages.children('li:last-child'); // select a child that is of type <li> then filter with last-child to get the very last li in the ordered list. 
+    // Heights
+    var clientHeight = messages.prop('clientHeight'); // prop is a cross platform browser way to fetch a property. this is a jquery alternative to doing it w/o jquery to make sure it works across all browsers
+    var scrollTop = messages.prop('scrollTop');
+    var scrollHeight = messages.prop('scrollHeight');
+    var newMessageHeight = newMessage.innerHeight(); // will calculate the height of the message taking into account the padding that we also applied via css
+
+    // it turns out we don't need lastMessageHeight in the calculation because it is part of the clientHeight already (look at the diagram) -- edit, it seems we need it -- waiting for response -- we need it because without it, autoscrolling wont' work for firefox and edge and chrome(if zoomed). 
+    var lastMessageHeight = newMessage.prev().innerHeight(); // prev gets the previous li in the ol so we can just use that to get the previous message. then we just call innerHeight to get the height of the message. 
+
+    if (clientHeight + scrollTop + newMessageHeight + lastMessageHeight >= scrollHeight) {
+        console.log(clientHeight + scrollTop + newMessageHeight + lastMessageHeight, scrollHeight);
+        messages.scrollTop(scrollHeight); // scrolltop() let's you set the scrollTop value. in this case, we'll be setting it to scrollHeight which effectively scrolls it to the bottom
+
+    }
+}
