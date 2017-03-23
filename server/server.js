@@ -64,9 +64,13 @@ io.on('connection', (socket) => {
     socket.on('createMessage', function (message, callback) {
         console.log('createMessage', message);
 
-        // newMessage emitter
-        io.emit('newMessage', generateMessage(message.from, message.text));
-
+        var user = users.getUser(socket.id);
+        if (user && isRealString(message.text)) {
+            // verify if user exists and if the message is not just a bunch of empty spaces
+            // newMessage emitter
+            //io.emit('newMessage', generateMessage(message.from, message.text));
+            io.to(user.room).emit('newMessage', generateMessage(user.name, message.text));
+        }
         callback('This is from the server');
 
         // we generate createdAt on the server side so that the client can't spoof this data
@@ -74,8 +78,10 @@ io.on('connection', (socket) => {
 
     // listener for the user location
     socket.on('createLocationMessage', (coords) => {
+        var user = users.getUser(socket.id);
         // notify all users by using io.emit
-        io.emit('newLocationMessage', generateLocationMessage('Admin', coords.latitude, coords.longitude));
+        //io.emit('newLocationMessage', generateLocationMessage('Admin', coords.latitude, coords.longitude));
+        io.to(user.room).emit('newLocationMessage', generateLocationMessage(user.name, coords.latitude, coords.longitude));
     });
 
     socket.on('disconnect', () => {

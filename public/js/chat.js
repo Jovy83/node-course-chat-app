@@ -88,7 +88,6 @@ jQuery('#message-form').on('submit', function (e) {
 
     // emit createMessage here because the user pressed the send button. 
     socket.emit('createMessage', {
-        from: 'User',
         text: messageTextbox.val() // select the element with a name of 'message' which is our textfield
     }, function () {
         // acknowledgement to be filled later if needed. 
