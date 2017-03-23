@@ -79,9 +79,12 @@ io.on('connection', (socket) => {
     // listener for the user location
     socket.on('createLocationMessage', (coords) => {
         var user = users.getUser(socket.id);
-        // notify all users by using io.emit
-        //io.emit('newLocationMessage', generateLocationMessage('Admin', coords.latitude, coords.longitude));
-        io.to(user.room).emit('newLocationMessage', generateLocationMessage(user.name, coords.latitude, coords.longitude));
+        if (user) {
+            // notify all users by using io.emit
+            //io.emit('newLocationMessage', generateLocationMessage('Admin', coords.latitude, coords.longitude));
+            io.to(user.room).emit('newLocationMessage', generateLocationMessage(user.name, coords.latitude, coords.longitude));
+        }
+
     });
 
     socket.on('disconnect', () => {
