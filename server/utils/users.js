@@ -54,6 +54,18 @@ class Users {
 
         return namesArray;
     }
+
+    // UPDATE CHALLENGE: check if username is existing already
+    isUserExistingAlready(name) {
+        var user = this.users.find((user) => {
+            return user.name === name;
+        });
+
+        if (user) {
+            return true;
+        } 
+        return false;
+    }
 }
 
 module.exports = { Users };

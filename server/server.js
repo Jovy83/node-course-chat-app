@@ -28,8 +28,17 @@ io.on('connection', (socket) => {
 
     // join listener
     socket.on('join', (params, callback) => {
-        if (!isRealString(params.name) || !isRealString(params.room)) {
+
+        // UPDATE CHALLENGE: convert the room name to lower case to make the chatroom name non-case sensitive
+        const theRoomName = params.room.toLowerCase(); 
+
+        if (!isRealString(params.name) || !isRealString(theRoomName)) {
             return callback('Name and room name are required'); // pass an error if validation failed
+        }
+
+        // UPDATE CHALLENGE: check if username is existing already
+        if(users.isUserExistingAlready(params.name)) {
+            return callback('Username already exists. Please choose a different username.');
         }
 
         // list of emits we've done in the server so far
@@ -42,20 +51,20 @@ io.on('connection', (socket) => {
         // socket.broadcast.to('roomName').emit = emits to everyone in that room except the sender
         // it's the same for socket.emit since we're sending a message to one specific user anyway
 
-        socket.join(params.room); // have the client join the room name they specified
+        socket.join(theRoomName); // have the client join the room name they specified
         // socket.leave('roomName') // this leaves the room 
 
         // when the user joins, add them to our users array
         // to make sure there's no duplicate user in our array, remove users each time they join, if they're in the array, before adding them to the array 
         users.removeUser(socket.id);
-        users.addUser(socket.id, params.name, params.room);
+        users.addUser(socket.id, params.name, theRoomName);
         // broadcast to everyone inside the room that this user has joined so that they can have their people list updated
-        io.to(params.room).emit('updateUserList', users.getUserList(params.room));
+        io.to(theRoomName).emit('updateUserList', users.getUserList(theRoomName));
 
         // socket.emit from Admin text Welcome to the chat app
         socket.emit('newMessage', generateMessage('Admin', 'Welcome to the chat app'));
         // socket.broadcast.emit from Admin text New user joined (aka broadcast to everyone in the room except this socket/ourselves)
-        socket.broadcast.to(params.room).emit('newMessage', generateMessage('Admin', `${params.name} has joined`));
+        socket.broadcast.to(theRoomName).emit('newMessage', generateMessage('Admin', `${params.name} has joined`));
 
         callback(); // don't pass any errors if string validation passed
     });
