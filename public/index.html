@@ -21,12 +21,21 @@
             </div>
             <div class="form-field">
                 <label>Room name</label>
-                <input type="text" name="room" />
+                <input type="text" name="room" id="room" />
+                <p><center><br>OR</center></p>
+                <br>
+                <p><center>Join existing room</center></p>
+                <select id="select">
+                    <option value="">List of rooms</option>
+                </select>
             </div>
             <div class="form-field">
                 <button>Join</button>
             </div>
         </form>
     </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/libs/jquery-3.1.1.min.js"></script>
+    <script src="/js/index.js"></script>
 </body>
 </html>

@@ -30,14 +30,14 @@ io.on('connection', (socket) => {
     socket.on('join', (params, callback) => {
 
         // UPDATE CHALLENGE: convert the room name to lower case to make the chatroom name non-case sensitive
-        const theRoomName = params.room.toLowerCase(); 
+        const theRoomName = params.room.toLowerCase();
 
         if (!isRealString(params.name) || !isRealString(theRoomName)) {
             return callback('Name and room name are required'); // pass an error if validation failed
         }
 
         // UPDATE CHALLENGE: check if username is existing already
-        if(users.isUserExistingAlready(params.name)) {
+        if (users.isUserExistingAlready(params.name)) {
             return callback('Username already exists. Please choose a different username.');
         }
 
@@ -106,6 +106,9 @@ io.on('connection', (socket) => {
             io.to(user.room).emit('newMessage', generateMessage('Admin', `${user.name} has left.`)); // will print 'user' has left the room
         }
     });
+
+    // UPDATE CHALLENGE: notify everyone about this room name
+    socket.emit('roomList', users.getRoomList());
 
 });
 

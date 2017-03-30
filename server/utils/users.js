@@ -5,6 +5,8 @@
 //     room: 'roomA'
 // }]
 
+const _ = require('lodash');
+
 // ES6 classes
 class Users {
     constructor() {
@@ -65,6 +67,19 @@ class Users {
             return true;
         } 
         return false;
+    }
+
+    // UPDATE CHALLENGE: get the existing room names
+    getRoomList() {
+        // get all the room names and store it in an array
+        var roomNames = this.users.map((user) => {
+            return user.room;
+        });
+
+        // filter the array to make sure that it doesn't have any duplicate room names
+        var filteredRoomNames = _.uniq(roomNames);
+        console.log('Filtered room names', filteredRoomNames);
+        return filteredRoomNames;
     }
 }
 
